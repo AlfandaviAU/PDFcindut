@@ -1,5 +1,5 @@
 import { Button,HStack, Input, Table, Thead, Tbody, Tr, Th, Td, Card, CardBody, Text, CardFooter, Container, Heading, Stack, Center, TableContainer } from "@chakra-ui/react";
-
+import { keyframes } from '@chakra-ui/react';
 import axios from "axios";
 
 import Image from "next/image";
