@@ -1,4 +1,4 @@
-import { Button,HStack, Input, Table, Thead, Tbody, Tr, Th, Td, Card, CardBody, Text, CardFooter, Container, Heading, Stack, Center, TableContainer } from "@chakra-ui/react";
+import { Button,HStack,Spinner, FormControl, FormLabel, Input, Table, Thead, Tbody, Tr, Th, Td, Card, CardBody, Text, CardFooter, Container, Heading, Stack, Center, TableContainer, VStack } from "@chakra-ui/react";
 import { keyframes } from '@chakra-ui/react';
 import axios from "axios";
 
@@ -11,104 +11,50 @@ import { useDropzone } from "react-dropzone";
 
 
 import catImage from "assets/wallpaper-cat-1.png"
-import trashIcon from "assets/trash.svg"
 
 export default function Home() {
     const [filename, setFilename] = useState("");
-    const [fileCollections, setFileCollections] = useState([]);
-
-    useEffect(() => {
-        getFileCollection();
-    }, [])
+    const [zipname, setZipname] = useState("");
+    const [selectedFile, setSelectedFile] = useState(null);
+    const [stateLoading, setStateLoading] = useState(false);
 
 
-    function getFileCollection(){
-        axios({
-            method: 'GET',
-            url: 'http://127.0.0.1:5000/filename',
-          })
-        .then((res) => {
-            setFileCollections(res.data.filenames)
-            setCheckedItems(Array(res.data.filenames.length).fill(false));
-        }).catch((err) => {
-            console.log(err)
-        })
-    }
-    function handleNaik(index){
-        if (index !== 0){
-            const newCollections = [...fileCollections];
-            newCollections[index-1] = newCollections[index]
-            newCollections[index] = fileCollections[index-1]
-            setFileCollections(newCollections)
-        }else{
-            console.log("")
-        }
-    }
-
-    const handleUpload = (acceptedFiles) => {
-        for (let i = 0; i < acceptedFiles.length; i++){
-            const formData = new FormData();
-            formData.append("file", acceptedFiles[i]);
-            axios({
-                method: 'POST',
-                url: 'http://127.0.0.1:5000/upload',
-                data: formData,
-                headers: {
-                    "Content-Type": "multipart/form-data",
-                },
-              })
-            .then((res) => {
-                console.log(res)
-            }).catch((err) => {
-                console.log(err)
-            })
-        }
-        window.location.reload()
+    const onDrop = (acceptedFiles) => {
+        setUploadedFiles(acceptedFiles);
     };
 
-    const { getRootProps, getInputProps } = useDropzone({ onDrop: handleUpload });
-
-    function handleDelete(index){
-        let payload = {
-            filename: fileCollections[index]
-        }
-        axios({
-            method: 'DELETE',
-            url: 'http://127.0.0.1:5000/delete',
-            data: payload,
-          })
-        .then((res) => {
-            console.log(res)
-        }).catch((err) => {
-            console.log(err)
-        })
-
-        const newCollections = [...fileCollections]
-        newCollections.splice(index, 1);
-        setFileCollections(newCollections)
+    function handleFileChange(event) {
+        setSelectedFile(event.target.files[0]);
     }
 
     function handleFilename(value){
         setFilename(value)
     }
 
-    function handleMerge(){
-        let payload = {
-            pdf_files: fileCollections,
-            pdf_name: filename
-        }
-        axios({
-            method: 'POST',
-            url: 'http://127.0.0.1:5000/merge',
-            data: payload,
-          })
-        .then((res) => {
-            console.log(res.data.message)
-        }).catch((err) => {
-            console.log(err)
-        })
-        window.location.reload()
+    function handleZipName(value){
+        setZipname(value)
     }
+
+    async function handleMerge() {
+        setStateLoading(true)
+        const formData = new FormData();
+        formData.append("file", selectedFile);
+        formData.append("filename", filename || "merged");
+        formData.append("zipname", zipname || "output");
+
+        try {
+            const response = await axios.post("http://127.0.0.1:5000/zip", formData, {
+                headers: {
+                    "Content-Type": "multipart/form-data",
+                },
+            });
+            console.log(response.data);
+        } catch (error) {
+            console.error("Error uploading and merging files:", error);
+        }
+        setStateLoading(false)
+    }
+
 
     return (
     <Container>
@@ -122,54 +68,59 @@ export default function Home() {
                     <Stack mt='6' spacing='3'>
                         <Heading size='md' textAlign={"center"}>PDF Merge Buat Cindut</Heading>
                     </Stack>
-                    <Stack mt='6' spacing='3'>
-                        <HStack spacing="4" alignItems="center" justify="center"> {/* HStack for inline content */}
-                            <Text size='md' textAlign={"center"}>
-                                Ini buat milih file dari di komputer cindut
-                            </Text>
-                            <div {...getRootProps()}>
-                                <input {...getInputProps()} />
-                                <Button backgroundColor='pink'>Apludd</Button>
-                            </div>
+                    <Center>
+                        <Stack mt='6' spacing='3' align="center" justify={"center"}>
+                            <FormControl>
+                                <HStack>
+                                    <FormLabel>Filenya diciniii</FormLabel>
+                                    <Button
+                                        as="label"
+                                        htmlFor="file-input"
+                                        backgroundColor="pink.50"
+                                        color="black"
+                                        cursor="pointer"
+                                        _active={{ backgroundColor: "pink.100" }}
+                                        _focus={{ boxShadow: "outline" }}
+                                    >
+                                        Apludd
+                                        <input
+                                            id="file-input"
+                                            type="file"
+                                            style={{ display: "none" }} // Hide the actual input visually
+                                            onChange={handleFileChange}
+                                        />
+                                    </Button>
+                                    {selectedFile && (
+                                        <Text fontSize="sm" fontWeight="bold">
+                                            Nama filenya: {selectedFile.name}
+                                        </Text>
+                                    )}
+                                </HStack>
+                            </FormControl>
+                        </Stack>
+                    </Center>
+                    <HStack>
+                        <Container>
+                            <Input mt={4} mb={2} placeholder='Cindut mau nama filenya apaa' onChange={(e) => handleFilename(e.target.value)} size='md' />
+                            <Input placeholder='Cindut mau nama zipnya apaa' onChange={(e) => handleZipName(e.target.value)} size='md' />
+                        </Container>
+                    <Button size={"lg"} backgroundColor='pink.50' onClick={(e) => handleMerge()}>Merge</Button>
+                    </HStack>
+
+                    {stateLoading? <Center>
+                        <HStack mt={5}>
+                            <Text>Loading bentar yaaa</Text>
+                            <Spinner color='pink.50' thickness={4} />
                         </HStack>
-                        
-                        <TableContainer>
-                            <Table variant="simple">
-                                <Thead bg="pink.50">
-                                    <Tr>
-                                        <Th textAlign="center">Nama File</Th>
-                                        <Th textAlign="center">Naik?</Th>
-                                        <Th textAlign="center">Dihapus aja?</Th>
-                                    </Tr>
-                                </Thead>
-                                <Tbody>
-                                    {fileCollections.map((file, index) => (
-                                        <Tr key={file}>
-                                            <Td>{file}</Td>
-                                            <Td>
-                                                <Button onClick={(e) => handleNaik(index)}>Naik</Button>
-                                            </Td>
-                                            <Td textAlign="center">
-                                                <Button onClick={(e) => handleDelete(index)}>
-                                                    <Image
-                                                        src={trashIcon}
-                                                        alt="logo sampaa"
-                                                    />
-                                                </Button>
-                                            </Td>
-                                        </Tr>
-                                    ))}
-                                </Tbody>
-                            </Table>
-                        </TableContainer>
-                    </Stack>
+                    </Center> : 
+                        <Center>
+                            <VStack mt={5}>
+                                <Text>Prosesnya uda celese semua ❤</Text>
+                                {/* <Spinner color='pink.50' thickness={4} /> */}
+                            </VStack>
+                        </Center>
+                    }
                 </CardBody>
-                <CardFooter>
-                    <Container>
-                        <Input placeholder='Cindut mau nama filenya apaa' onChange={(e) => handleFilename(e.target.value)} size='md' />
-                    </Container>
-                    <Button backgroundColor='pink' onClick={(e) => handleMerge()}>Merge</Button>
-                </CardFooter>
             </Card>
         </Center>
     </Container>
