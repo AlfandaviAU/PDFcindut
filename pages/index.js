@@ -66,7 +66,7 @@ export default function Home() {
                         alt="Cindut kalau jadi emeng"
                     />
                     <Stack mt='6' spacing='3'>
-                        <Heading size='md' textAlign={"center"}>PDF Merge Buat Cindut</Heading>
+                        <Heading size='md' textAlign={"center"}>Remove PDF Buat Cindut</Heading>
                     </Stack>
                     <Center>
                         <Stack mt='6' spacing='3' align="center" justify={"center"}>
